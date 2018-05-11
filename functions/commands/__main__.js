@@ -1,6 +1,8 @@
 const lib = require('lib')({token: process.env.STDLIB_TOKEN});
 const getBotToken = require('../../helpers/get_bot_token.js');
 const message = require('../../utils/message.js');
+const openDialog = require('../../utils/open_dialog.js');
+
 /**
 * Slack Slash Command Handler:
 *   This function receives slash commands from Slack and dispatches
@@ -28,33 +30,28 @@ module.exports = (context, callback) => {
     if (err) {
       callback(err);
     }
-    lib[`${context.service.identifier}.commands.${name}`](
-      {
-        user: command.user_id,
-        channel: command.channel_id,
-        text: command.text,
-        command: command,
-        botToken: botToken
-      },
-      (err, result) => {
-        if (err) {
-          message(
-            botToken,
-            command.channel_id,
+    openDialog(botToken, command.trigger_id, {
+      callback_id: 'schedule_dialog',
+      title: 'Request a Ride',
+      submit_label: 'Request',
+      elements: [
+        {
+          label: 'Choose a building',
+          type: 'select',
+          name: 'building',
+          options: [
             {
-              text: err.message
-            },
-            callback
-          );
-        } else {
-          message(
-            botToken,
-            command.channel_id,
-            result,
-            callback
-          );
+                label: 'WPP',
+                value: 'wpp'
+            }
+          ]
         }
+      ]
+    }, (err, result) => {
+      if (err) {
+        return callback(err);
       }
-    );
+      return callback(null, {});
+    })
   });
 };
